@@ -62,7 +62,7 @@ def main():
 
     # Invio automatico giornaliero (alle 10:00)
     job_queue = application.job_queue
-    job_queue.run_daily(invia_offerta, days=(0,1,2,3,4,5,6), time=datetime.time(hour=8,0,0, tzinfo=datetime.timezone.utc))
+    job_queue.run_daily(invia_offerta, time=datetime.time(hour=8), days=(0,1,2,3,4,5,6))
 
     application.run_polling()
 
