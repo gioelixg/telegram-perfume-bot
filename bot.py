@@ -1,14 +1,12 @@
 import os
 import json
 import logging
-import asyncio
 from datetime import datetime, time
 from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackContext,
-    JobQueue
+    CallbackContext
 )
 from dotenv import load_dotenv
 
@@ -75,22 +73,22 @@ async def manual_offerta(update: Update, context: CallbackContext):
     await update.message.reply_text('📬 Offerta inviata manualmente!')
 
 def main():
-    # Costruisci l'applicazione
+    # Costruisci l'applicazione - VERSIONE SEMPLIFICATA
     application = Application.builder().token(TOKEN).build()
-
+    
     # Aggiungi gestori di comandi
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("offerta", manual_offerta))
-
-    # Configura il job giornaliero (semplificato)
+    
+    # Configura il job giornaliero - APPROCCIO ALTERNATIVO
     job_queue = application.job_queue
-    job_queue.run_daily(
+    job_queue.run_repeating(
         invia_offerta,
-        time=time(8, 0, 0),  # 08:00 UTC
-        days=tuple(range(7)),  # Tutti i giorni
+        interval=86400,  # 24 ore in secondi
+        first=10,  # Invia dopo 10 secondi dall'avvio (per test)
         name="daily_offer_job"
     )
-
+    
     # Avvia il bot
     application.run_polling()
 
