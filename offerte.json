@@ -1,0 +1,14 @@
+[
+  {
+    "nome": "Chanel N°5 EDP",
+    "prezzo": "89,99€",
+    "link_affiliato": "https://tuo-link-affiliato.com/chanel5",
+    "scadenza": "2023-12-31"
+  },
+  {
+    "nome": "Dior Sauvage 100ml",
+    "prezzo": "105,50€",
+    "link_affiliato": "https://tuo-link-affiliato.com/sauvage",
+    "scadenza": "2023-12-15"
+  }
+]
