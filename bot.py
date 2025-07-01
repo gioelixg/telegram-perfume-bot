@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime, time
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder,
+    Application,
     CommandHandler,
     CallbackContext,
     JobQueue
@@ -74,28 +74,20 @@ async def manual_offerta(update: Update, context: CallbackContext):
     await invia_offerta(context)
     await update.message.reply_text('📬 Offerta inviata manualmente!')
 
-async def post_init(app):
-    """Configurazione post-inizializzazione"""
-    app.job_queue.scheduler.configure(timezone='UTC')
-    logger.info("Job Queue configurata con UTC")
-
 def main():
     # Costruisci l'applicazione
-    application = ApplicationBuilder() \
-        .token(TOKEN) \
-        .post_init(post_init) \
-        .build()
+    application = Application.builder().token(TOKEN).build()
 
     # Aggiungi gestori di comandi
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("offerta", manual_offerta))
 
-    # Configura il job giornaliero
+    # Configura il job giornaliero (semplificato)
     job_queue = application.job_queue
     job_queue.run_daily(
         invia_offerta,
         time=time(8, 0, 0),  # 08:00 UTC
-        days=(0, 1, 2, 3, 4, 5, 6),
+        days=tuple(range(7)),  # Tutti i giorni
         name="daily_offer_job"
     )
 
