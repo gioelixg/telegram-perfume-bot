@@ -1,18 +1,29 @@
 import os
 import json
 import logging
-from datetime import datetime
+from datetime import time, datetime, timedelta  # Import corretti
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackContext,
+    CallbackQueryHandler,
+    ApplicationBuilder  # Aggiunto per compatibilità
+)
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
 
-# Configurazione
+# Configurazione logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Caricamento variabili ambiente
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 GROUP_ID = os.getenv('GROUP_ID')
 OFFERTE_FILE = 'offerte.json'
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 def carica_offerte():
     with open(OFFERTE_FILE, 'r') as f:
@@ -29,7 +40,10 @@ def offerta_attuale():
 async def invia_offerta(context: CallbackContext):
     offerta = offerta_attuale()
     if not offerta:
-        await context.bot.send_message(chat_id=GROUP_ID, text="🔍 Nuove offerte in arrivo a breve!")
+        await context.bot.send_message(
+            chat_id=GROUP_ID,
+            text="🔍 Nuove offerte in arrivo a breve!"
+        )
         return
 
     messaggio = (
@@ -40,29 +54,36 @@ async def invia_offerta(context: CallbackContext):
         f"[🛒 Acquista ora]({offerta['link_affiliato']})"
     )
 
-    keyboard = [[InlineKeyboardButton("Acquista", url=offerta['link_affiliato'])]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     await context.bot.send_message(
         chat_id=GROUP_ID,
         text=messaggio,
-        parse_mode='Markdown',
-        reply_markup=reply_markup
+        parse_mode='Markdown'
     )
 
 async def start(update: Update, context: CallbackContext):
     await update.message.reply_text('Bot avviato! Usa /offerta per vedere la promozione corrente')
 
 def main():
-    application = Application.builder().token(TOKEN).build()
+    # Configurazione application con post_init
+    application = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .post_init(lambda app: app.job_queue.scheduler.configure(timezone='UTC'))
+        .build()
+    )
 
-    # Comandi
+    # Aggiunta handler
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("offerta", lambda u,c: invia_offerta(c)))
 
-    # Invio automatico giornaliero (alle 10:00)
+    # Configurazione job giornaliero
     job_queue = application.job_queue
-    job_queue.run_daily(invia_offerta, time=datetime.time(hour=8), days=(0,1,2,3,4,5,6))
+    ora_invio = time(hour=8)  # 08:00 UTC
+    job_queue.run_daily(
+        invia_offerta,
+        time=ora_invio,
+        days=(0, 1, 2, 3, 4, 5, 6)  # Tutti i giorni
+    )
 
     application.run_polling()
 
